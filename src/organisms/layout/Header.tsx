@@ -1,17 +1,24 @@
-import React from "react";
+import React, { useEffect, useState } from "react";
 import AppBar from "@mui/material/AppBar";
 import Box from "@mui/material/Box";
 import Toolbar from "@mui/material/Toolbar";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
-import { getAuth, signOut } from "firebase/auth";
+import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
 import { app } from "@/lib/firebase";
 import { useRouter } from "next/router";
 
-export default function Header() {
+const Header = () => {
   const router = useRouter();
   const auth = getAuth(app);
+  const [user, setUser] = useState(auth.currentUser);
+
+  useEffect(() => {
+    onAuthStateChanged(auth, (currentUser) => {
+      setUser(currentUser);
+    });
+  }, [auth]);
 
   const handleLogout = () => {
     signOut(auth)
@@ -36,15 +43,14 @@ export default function Header() {
           >
             <MenuIcon />
           </IconButton>
-          <Button
-            color="inherit"
-            onClick={handleLogout}
-            sx={{ textAlign: "right" }}
-          >
+          <p>{user?.email}</p>
+          <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
             Logout
           </Button>
         </Toolbar>
       </AppBar>
     </Box>
   );
-}
+};
+
+export default Header;
