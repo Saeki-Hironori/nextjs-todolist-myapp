@@ -18,12 +18,17 @@ const addTodos = () => {
     setTitle(e.target.value);
   };
   const handleIconButtonClick = async () => {
-    console.log(user.uid);
-    await addDoc(collection(collection(db, "Users"), user.uid, "TodoList"), {
-      title: title,
-      status: "Incomplete",
-      createdAt: serverTimestamp(),
-    });
+    if (title !== "") {
+      console.log(user.uid);
+      await addDoc(collection(collection(db, "Users"), user.uid, "TodoList"), {
+        title: title,
+        status: "notStarted",
+        createdAt: serverTimestamp(),
+      });
+      setTitle("");
+    } else {
+      alert("何か入力してください");
+    }
   };
 
   return (
