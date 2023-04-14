@@ -44,7 +44,13 @@ const Header = () => {
             <MenuIcon />
           </IconButton>
           <p>{user?.email}</p>
-          <Button color="inherit" onClick={handleLogout} sx={{ ml: 2 }}>
+          <p>（{user?.uid}）</p>
+          <Button
+            variant="outlined"
+            color="inherit"
+            onClick={handleLogout}
+            sx={{ ml: 2 }}
+          >
             Logout
           </Button>
         </Toolbar>

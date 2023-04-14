@@ -17,6 +17,7 @@ import { useRouter } from "next/router";
 const SignUp = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const router = useRouter();
   const auth = getAuth(app);
@@ -37,7 +38,28 @@ const SignUp = () => {
         console.log(user.uid);
         router.push("/todos/Todos");
       })
-      .catch((error) => console.log(error.code));
+      .catch((error) => {
+        switch (error.code) {
+          case "auth/network-request-failed":
+            setError(
+              "通信がエラーになったのか、またはタイムアウトになりました。"
+            );
+            break;
+          case "auth/weak-password":
+            setError("パスワードが短すぎます。6文字以上を入力してください。");
+            break;
+          case "auth/invalid-email":
+            setError("メールアドレスが正しくありません");
+            break;
+          case "auth/email-already-in-use":
+            setError(
+              "アカウントは既に作成されています。ログインするか別のメールアドレスで作成してください"
+            );
+            break;
+          default: //想定外
+            setError("アカウントの作成に失敗しました");
+        }
+      });
   };
 
   return (
@@ -65,6 +87,9 @@ const SignUp = () => {
       <form onSubmit={handleSubmit}>
         <InputEmail value={email} onChange={handleChangeEmail} />
         <InputPassword value={password} onChange={handleChangePassword} />
+        <p style={{ marginBottom: "15px", color: "red", fontSize: "12px" }}>
+          {error}
+        </p>
         <Button
           type="submit"
           fullWidth

@@ -1,13 +1,21 @@
 import Header from "@/organisms/layout/Header";
 import React, { useEffect, useState } from "react";
 import AddTodos from "../../components/atom/AddTodos";
-import { Timestamp, collection, getDocs } from "firebase/firestore";
+import {
+  Timestamp,
+  collection,
+  doc,
+  getDocs,
+  updateDoc,
+} from "firebase/firestore";
 import { app, db } from "@/lib/firebase";
 import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { Box, Button, CircularProgress, LinearProgress } from "@mui/material";
+import { Box, Button, LinearProgress } from "@mui/material";
+import { query, orderBy } from "firebase/firestore";
 
 type TODO = {
-  time: Timestamp;
+  id: string;
+  createdAt: Timestamp;
   status: string;
   title: string;
 };
@@ -17,27 +25,42 @@ const Todos = () => {
   const auth = getAuth(app);
   const [user, setUser] = useState(auth.currentUser);
 
+  //firestoreのデータをcreatedBy順にする
+
+  // firestoreの各ユーザーのTodoListまでアクセス
+
+  // ページ読み込み時にすべてのデータを表示する
   useEffect(() => {
     onAuthStateChanged(auth, (currentUser) => {
       setUser(currentUser);
     });
+    AllData();
   }, [auth]);
 
-  const fetchData = async () => {
-    await getDocs(
-      collection(collection(db, "Users"), user.uid, "TodoList")
-    ).then((querySnapshot) => {
-      const todosData = querySnapshot.docs.map((doc: any) => ({
+  // 全てのデータを表示する（タイムスタンプ順）
+  const AllData = async () => {
+    const createdBySort = query(
+      collection(collection(db, "Users"), user.uid, "TodoList"),
+      orderBy("createdAt")
+    );
+    await getDocs(createdBySort).then((res) => {
+      const todosData = res.docs.map((doc: any) => ({
         ...doc.data(),
       }));
       setTodos(todosData);
-      console.log(todos);
     });
   };
 
-  useEffect(() => {
-    // ページが読み込まれるとuidが一致するデータのみ取ってくる。
-  }, []);
+  const statusChange = async (
+    targetTodo: TODO,
+    e: React.ChangeEvent<HTMLSelectElement>
+  ) => {
+    const TodoList = collection(collection(db, "Users"), user.uid, "TodoList");
+    await updateDoc(doc(TodoList, targetTodo.id), {
+      status: e.target.value,
+    });
+    AllData();
+  };
 
   return (
     <>
@@ -46,9 +69,28 @@ const Todos = () => {
           <Header />
           <div style={{ maxWidth: "50em", margin: "2em", fontSize: "20px" }}>
             <h1>Todo一覧</h1>
+            <div>
+              {todos.map((todo) => (
+                <li key={todo.id} className="list">
+                  <select
+                    value={todo.status}
+                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                      statusChange(todo, e);
+                    }}
+                  >
+                    <option value="notStarted">未着手</option>
+                    <option value="doing">進行中</option>
+                    <option value="done">完了</option>
+                  </select>
+                  <span className="todo_title">{todo.title}</span>
+                  <button>編集</button>
+                  <button>削除</button>
+                </li>
+              ))}
+            </div>
             <AddTodos />
             <div style={{ marginTop: "20px" }}>
-              <Button onClick={fetchData} color={"success"} fullWidth>
+              <Button onClick={AllData} color={"success"} fullWidth>
                 データ同期
               </Button>
             </div>

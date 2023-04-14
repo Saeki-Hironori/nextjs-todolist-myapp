@@ -17,6 +17,7 @@ import { useRouter } from "next/router";
 const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
   const router = useRouter();
   const auth = getAuth(app);
@@ -29,10 +30,26 @@ const Login = () => {
   };
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    await signInWithEmailAndPassword(auth, email, password)
+      .then(() => {
+        router.push("/todos/Todos");
+      })
+      .catch((error) => {
+        console.log(error.code);
+        switch (error.code) {
+          case "auth/user-not-found":
+            setError("アカウントが存在しません");
+            break;
+          case "auth/wrong-password":
+            setError("パスワードが間違っています");
+            break;
+          case "auth/too-many-requests":
+            setError("何度もパスワードを間違えています");
+            break;
+        }
+      });
     console.log("Email:", email);
     console.log("Password:", password);
-    await signInWithEmailAndPassword(auth, email, password);
-    router.push("/todos/Todos");
   };
 
   return (
@@ -63,6 +80,9 @@ const Login = () => {
         <form onSubmit={handleSubmit}>
           <InputEmail value={email} onChange={handleChangeEmail} />
           <InputPassword value={password} onChange={handleChangePassword} />
+          <p style={{ marginBottom: "15px", color: "red", fontSize: "12px" }}>
+            {error}
+          </p>
           <Button
             type="submit"
             fullWidth
