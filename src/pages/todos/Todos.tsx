@@ -12,7 +12,15 @@ import {
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { Box, Button, LinearProgress } from "@mui/material";
+import {
+  Box,
+  Button,
+  LinearProgress,
+  Modal,
+  TextField,
+  IconButton,
+} from "@mui/material";
+import CloseIcon from "@mui/icons-material/Close";
 import { TODO, TODOArray } from "@/types/user";
 
 const Todos = () => {
@@ -20,6 +28,8 @@ const Todos = () => {
   const [user, setUser] = useState(auth.currentUser);
   const [filter, setFilter] = useState("all");
   const [filteredTodos, setFilteredTodos] = useState<TODOArray>([]);
+  const [open, setOpen] = useState(false);
+  const [detail, setDetail] = useState("");
 
   // ページ読み込み時にすべてのデータを表示する
   useEffect(() => {
@@ -35,7 +45,7 @@ const Todos = () => {
 
   const AllData = async () => {
     //firestoreのデータをcreatedBy順にする
-    const createdBySort = query(
+    const createdBySort = await query(
       collection(collection(db, "Users"), user.uid, "TodoListId"),
       orderBy("createdAt")
     );
@@ -45,7 +55,6 @@ const Todos = () => {
         ...doc.data(),
       }));
       setTodos(todosData);
-      console.log(todos);
     });
   };
 
@@ -91,6 +100,25 @@ const Todos = () => {
     AllData();
   };
 
+  const handleOpen = (todo: TODO) => {
+    setOpen(true);
+    setDetail(todo.detail);
+  };
+
+  const handleClose = (todo: TODO) => {
+    const TodoListId = collection(
+      collection(db, "Users"),
+      user.uid,
+      "TodoListId"
+    );
+    setOpen(false);
+    updateDoc(doc(TodoListId, todo.id), { detail: detail });
+  };
+
+  const handleChangeDetail = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setDetail(e.target.value);
+  };
+
   return (
     <>
       {user ? (
@@ -118,36 +146,70 @@ const Todos = () => {
               style={{
                 maxWidth: "50em",
                 margin: "0 auto",
-                fontSize: "20px",
               }}
             >
               {filteredTodos.map((todo) => (
-                <Box
-                  sx={{
-                    display: "flex",
-                    bgcolor: "background.paper",
-                    borderRadius: 1,
-                  }}
+                <Modal
+                  open={open}
+                  onClose={handleClose}
+                  aria-labelledby="modal-modal-title"
+                  aria-describedby="modal-modal-description"
                 >
-                  <li key={todo.id} className="list">
-                    <select
-                      value={todo.status}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
-                        statusChange(todo, e);
-                      }}
-                      style={{
-                        marginRight: "10px",
+                  <Box>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        bgcolor: "background.paper",
+                        borderRadius: 1,
                       }}
                     >
-                      <option value="notStarted">未着手</option>
-                      <option value="doing">進行中</option>
-                      <option value="done">完了</option>
-                    </select>
-                    <span className="todo_title">{todo.title}</span>
-                    <Button>編集</Button>
-                    <Button onClick={() => deleteTodo(todo)}>削除</Button>
-                  </li>
-                </Box>
+                      <li key={todo.id} className="list">
+                        <select
+                          value={todo.status}
+                          onChange={(
+                            e: React.ChangeEvent<HTMLSelectElement>
+                          ) => {
+                            statusChange(todo, e);
+                          }}
+                          style={{
+                            marginRight: "10px",
+                            border: "outset green",
+                            borderRadius: "8px",
+                          }}
+                        >
+                          <option value="notStarted">未着手</option>
+                          <option value="doing">進行中</option>
+                          <option value="done">完了</option>
+                        </select>
+                        <span
+                          className="todo_title"
+                          style={{ fontSize: "20px" }}
+                        >
+                          {todo.title}
+                        </span>
+                        <Button onClick={() => handleOpen(todo)}>詳細</Button>
+                        <Button onClick={() => deleteTodo(todo)}>削除</Button>
+                      </li>
+                    </Box>
+                    <Box sx={{ margin: "300px", bgcolor: "white" }}>
+                      <Box sx={{ textAlign: "right" }}>
+                        <IconButton onClick={() => handleClose(todo)}>
+                          <p>保存して閉じる</p>
+                          <CloseIcon />
+                        </IconButton>
+                      </Box>
+                      <TextField
+                        id="outlined-multiline-static"
+                        label="詳細を記入"
+                        value={detail}
+                        multiline
+                        rows={4}
+                        fullWidth
+                        onChange={handleChangeDetail}
+                      />
+                    </Box>
+                  </Box>
+                </Modal>
               ))}
               <AddTodos />
               <div

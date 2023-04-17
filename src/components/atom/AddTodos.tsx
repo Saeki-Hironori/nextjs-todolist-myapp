@@ -14,11 +14,8 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { query, orderBy } from "firebase/firestore";
-import useAllData from "@/hooks/useAllData";
 
-const addTodos = (props: any) => {
-  const { AllTodos, AllData } = useAllData();
-  const {} = props;
+const addTodos = () => {
   const [title, setTitle] = useState("");
   const user = auth.currentUser;
 
@@ -45,6 +42,7 @@ const addTodos = (props: any) => {
         id: "",
         title: title,
         status: "notStarted",
+        detail: "",
         createdAt: serverTimestamp(),
       });
       updateDoc(doc(TodoListId, addData.id), { id: addData.id });

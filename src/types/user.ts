@@ -5,6 +5,7 @@ export type TODO = {
   createdAt: Timestamp;
   status: string;
   title: string;
+  detail: string;
 };
 
 export type TODOArray = Array<{
@@ -12,4 +13,5 @@ export type TODOArray = Array<{
   createdAt: Timestamp;
   status: string;
   title: string;
+  detail: string;
 }>;
