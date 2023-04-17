@@ -5,8 +5,7 @@ import Input from "@mui/material/Input";
 import InputAdornment from "@mui/material/InputAdornment";
 import { IconButton } from "@mui/material";
 import ControlPointIcon from "@mui/icons-material/ControlPoint";
-import { app, db } from "@/lib/firebase";
-import { getAuth } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
 import {
   addDoc,
   collection,
@@ -15,38 +14,51 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { query, orderBy } from "firebase/firestore";
+import useAllData from "@/hooks/useAllData";
 
-const addTodos = () => {
+const addTodos = (props: any) => {
+  const { AllTodos, AllData } = useAllData();
+  const {} = props;
   const [title, setTitle] = useState("");
-  const auth = getAuth(app);
-  const user = auth.currentUser!;
+  const user = auth.currentUser;
 
   //firestoreのデータをcreatedBy順にする
   const createdBySort = query(
-    collection(collection(db, "Users"), user.uid, "TodoList"),
+    collection(collection(db, "Users"), user.uid, "TodoListId"),
     orderBy("createdAt")
   );
 
-  // firestoreの各ユーザーのTodoListまでアクセス
-  const TodoList = collection(collection(db, "Users"), user.uid, "TodoList");
+  // firestoreの各ユーザーのTodoListIdまでアクセス
+  const TodoListId = collection(
+    collection(db, "Users"),
+    user.uid,
+    "TodoListId"
+  );
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setTitle(e.target.value);
   };
 
-  const handleIconButtonClick = async () => {
+  const handleSubmit = async () => {
     if (title !== "") {
-      const addData = await addDoc(TodoList, {
+      const addData = await addDoc(TodoListId, {
         id: "",
         title: title,
         status: "notStarted",
         createdAt: serverTimestamp(),
       });
-      updateDoc(doc(TodoList, addData.id), { id: addData.id });
+      updateDoc(doc(TodoListId, addData.id), { id: addData.id });
       setTitle("");
     } else {
       alert("何か入力してください");
     }
+  };
+
+  const handleInputKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    // Enterのみ通す⇒KeyboardEvent実行中（キー押下中）は動作キャンセル⇒（キー離したら）handleSubmit実行
+    if (e.key !== "Enter") return;
+    e.preventDefault();
+    handleSubmit();
   };
 
   return (
@@ -57,9 +69,10 @@ const addTodos = () => {
       <Input
         id="standard-adornment-amount"
         onChange={handleInputChange}
+        onKeyDown={handleInputKeyDown}
         value={title}
         endAdornment={
-          <InputAdornment position="start" onClick={handleIconButtonClick}>
+          <InputAdornment position="start" onClick={handleSubmit}>
             <IconButton edge="end">
               <ControlPointIcon sx={{ color: "green" }} />
             </IconButton>

@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { getAuth, createUserWithEmailAndPassword } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import {
   Avatar,
   Button,
@@ -20,7 +20,6 @@ const SignUp = () => {
   const [error, setError] = useState("");
 
   const router = useRouter();
-  const auth = getAuth(app);
 
   const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);

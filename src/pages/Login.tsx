@@ -11,7 +11,7 @@ import InputPassword from "@/components/atom/InputPassword";
 import InputEmail from "@/components/atom/InputEmail";
 import Link from "next/link";
 import { getAuth, signInWithEmailAndPassword } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "next/router";
 
 const Login = () => {
@@ -20,7 +20,6 @@ const Login = () => {
   const [error, setError] = useState("");
 
   const router = useRouter();
-  const auth = getAuth(app);
 
   const handleChangeEmail = (e: React.ChangeEvent<HTMLInputElement>) => {
     setEmail(e.target.value);

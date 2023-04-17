@@ -5,13 +5,12 @@ import Toolbar from "@mui/material/Toolbar";
 import Button from "@mui/material/Button";
 import IconButton from "@mui/material/IconButton";
 import MenuIcon from "@mui/icons-material/Menu";
-import { getAuth, onAuthStateChanged, signOut } from "firebase/auth";
-import { app } from "@/lib/firebase";
+import { onAuthStateChanged, signOut } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 import { useRouter } from "next/router";
 
 const Header = () => {
   const router = useRouter();
-  const auth = getAuth(app);
   const [user, setUser] = useState(auth.currentUser);
 
   useEffect(() => {

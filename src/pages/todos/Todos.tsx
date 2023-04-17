@@ -2,43 +2,24 @@ import Header from "@/organisms/layout/Header";
 import React, { useEffect, useState } from "react";
 import AddTodos from "../../components/atom/AddTodos";
 import {
-  Timestamp,
   collection,
+  deleteDoc,
   doc,
   getDocs,
+  orderBy,
+  query,
   updateDoc,
 } from "firebase/firestore";
-import { app, db } from "@/lib/firebase";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { auth, db } from "@/lib/firebase";
+import { onAuthStateChanged } from "firebase/auth";
 import { Box, Button, LinearProgress } from "@mui/material";
-import { query, orderBy } from "firebase/firestore";
-import List from "@mui/material/List";
-import ListItem from "@mui/material/ListItem";
-
-type TODO = {
-  id: string;
-  createdAt: Timestamp;
-  status: string;
-  title: string;
-};
-
-type TODOArray = Array<{
-  id: string;
-  createdAt: Timestamp;
-  status: string;
-  title: string;
-}>;
+import { TODO, TODOArray } from "@/types/user";
 
 const Todos = () => {
   const [todos, setTodos] = useState<TODO[]>([]);
-  const auth = getAuth(app);
   const [user, setUser] = useState(auth.currentUser);
   const [filter, setFilter] = useState("all");
   const [filteredTodos, setFilteredTodos] = useState<TODOArray>([]);
-
-  //firestoreのデータをcreatedBy順にする
-
-  // firestoreの各ユーザーのTodoListまでアクセス
 
   // ページ読み込み時にすべてのデータを表示する
   useEffect(() => {
@@ -46,23 +27,25 @@ const Todos = () => {
       setUser(currentUser);
     });
     AllData();
-  }, [auth]);
+  }, []);
 
   useEffect(() => {
     filteringTodos();
   }, [filter, todos]);
 
-  // 全てのデータを表示する（タイムスタンプ順）
   const AllData = async () => {
+    //firestoreのデータをcreatedBy順にする
     const createdBySort = query(
-      collection(collection(db, "Users"), user.uid, "TodoList"),
+      collection(collection(db, "Users"), user.uid, "TodoListId"),
       orderBy("createdAt")
     );
+    // createdBy順のデータを取得し配列にする
     await getDocs(createdBySort).then((res) => {
       const todosData = res.docs.map((doc: any) => ({
         ...doc.data(),
       }));
       setTodos(todosData);
+      console.log(todos);
     });
   };
 
@@ -70,8 +53,13 @@ const Todos = () => {
     targetTodo: TODO,
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
-    const TodoList = collection(collection(db, "Users"), user.uid, "TodoList");
-    await updateDoc(doc(TodoList, targetTodo.id), {
+    // TodoList = firestoreの各ユーザーのTodoListまでアクセス（User⇒uid⇒TodoList⇒todos）
+    const TodoList = collection(
+      collection(db, "Users"),
+      user.uid,
+      "TodoListId"
+    );
+    await updateDoc(doc(TodoList!, targetTodo.id), {
       status: e.target.value,
     });
     AllData();
@@ -91,6 +79,16 @@ const Todos = () => {
       default:
         setFilteredTodos(todos);
     }
+  };
+
+  const deleteTodo = async (targetTodo: TODO) => {
+    const TodoList = collection(
+      collection(db, "Users"),
+      user.uid,
+      "TodoListId"
+    );
+    await deleteDoc(doc(TodoList, targetTodo.id));
+    AllData();
   };
 
   return (
@@ -147,7 +145,7 @@ const Todos = () => {
                     </select>
                     <span className="todo_title">{todo.title}</span>
                     <Button>編集</Button>
-                    <Button>削除</Button>
+                    <Button onClick={() => deleteTodo(todo)}>削除</Button>
                   </li>
                 </Box>
               ))}
