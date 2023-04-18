@@ -179,9 +179,9 @@ const Todos = () => {
                     bgcolor: "background.paper",
                     borderRadius: 1,
                   }}
+                  key={todo.id}
                 >
                   <li
-                    key={todo.id}
                     className="list"
                     style={{ width: "100%", margin: "2px 0" }}
                   >
