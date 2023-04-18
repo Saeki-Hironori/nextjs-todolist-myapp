@@ -11,13 +11,7 @@ import { useRouter } from "next/router";
 
 const Header = () => {
   const router = useRouter();
-  const [user, setUser] = useState(auth.currentUser);
-
-  useEffect(() => {
-    onAuthStateChanged(auth, (currentUser) => {
-      setUser(currentUser);
-    });
-  }, [auth]);
+  const user = auth.currentUser;
 
   const handleLogout = () => {
     signOut(auth)

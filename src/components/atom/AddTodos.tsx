@@ -35,7 +35,7 @@ const addTodos = () => {
         detail: "",
         createdAt: serverTimestamp(),
       });
-      updateDoc(doc(TodoListId, addData.id), { id: addData.id });
+      await updateDoc(doc(TodoListId, addData.id), { id: addData.id });
       setTitle("");
     } else {
       alert("何か入力してください");
