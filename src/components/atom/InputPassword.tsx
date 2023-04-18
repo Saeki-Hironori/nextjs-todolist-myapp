@@ -8,7 +8,6 @@ import FormControl from "@mui/material/FormControl";
 import Visibility from "@mui/icons-material/Visibility";
 import VisibilityOff from "@mui/icons-material/VisibilityOff";
 
-// propsのany直す！！！
 type Props = {
   value: string;
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
