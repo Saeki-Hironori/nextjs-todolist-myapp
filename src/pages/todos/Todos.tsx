@@ -11,7 +11,7 @@ import {
   updateDoc,
 } from "firebase/firestore";
 import { auth, db } from "@/lib/firebase";
-import { onAuthStateChanged } from "firebase/auth";
+import { User, onAuthStateChanged } from "firebase/auth";
 import {
   Box,
   Button,
@@ -23,13 +23,28 @@ import {
 import CloseIcon from "@mui/icons-material/Close";
 import { TODO, TODOArray } from "@/types/user";
 
+const style = {
+  position: "absolute" as "absolute",
+  top: "50%",
+  left: "50%",
+  transform: "translate(-50%, -50%)",
+  width: 400,
+  bgcolor: "background.paper",
+  border: "2px solid #000",
+  boxShadow: 24,
+};
+
 const Todos = () => {
   const [todos, setTodos] = useState<TODO[]>([]);
-  const [user, setUser] = useState(auth.currentUser);
+  const [user, setUser] = useState<User | null>(null);
   const [filter, setFilter] = useState("all");
   const [filteredTodos, setFilteredTodos] = useState<TODOArray>([]);
   const [open, setOpen] = useState(false);
+  const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
+  const [id, setId] = useState("");
+
+  const uid = user?.uid;
 
   // ページ読み込み時にすべてのデータを表示する
   useEffect(() => {
@@ -44,17 +59,19 @@ const Todos = () => {
   }, [filter, todos]);
 
   const AllData = async () => {
+    if (!uid) return;
     //firestoreのデータをcreatedBy順にする
     const createdBySort = await query(
-      collection(collection(db, "Users"), user.uid, "TodoListId"),
+      collection(collection(db, "Users"), uid, "TodoListId"),
       orderBy("createdAt")
     );
     // createdBy順のデータを取得し配列にする
     await getDocs(createdBySort).then((res) => {
-      const todosData = res.docs.map((doc: any) => ({
+      const AllTodos = res.docs.map((doc: any) => ({
+        //↑ここのanyが分からない
         ...doc.data(),
       }));
-      setTodos(todosData);
+      setTodos(AllTodos);
     });
   };
 
@@ -62,13 +79,10 @@ const Todos = () => {
     targetTodo: TODO,
     e: React.ChangeEvent<HTMLSelectElement>
   ) => {
+    if (!uid) return;
     // TodoList = firestoreの各ユーザーのTodoListまでアクセス（User⇒uid⇒TodoList⇒todos）
-    const TodoList = collection(
-      collection(db, "Users"),
-      user.uid,
-      "TodoListId"
-    );
-    await updateDoc(doc(TodoList!, targetTodo.id), {
+    const TodoList = collection(collection(db, "Users"), uid, "TodoListId");
+    await updateDoc(doc(TodoList, targetTodo.id), {
       status: e.target.value,
     });
     AllData();
@@ -90,32 +104,39 @@ const Todos = () => {
     }
   };
 
-  const deleteTodo = async (targetTodo: TODO) => {
-    const TodoList = collection(
-      collection(db, "Users"),
-      user.uid,
-      "TodoListId"
-    );
-    await deleteDoc(doc(TodoList, targetTodo.id));
+  const handleDeleteTodo = async () => {
+    if (!uid) return;
+    const TodoList = collection(collection(db, "Users"), uid, "TodoListId");
+    await deleteDoc(doc(TodoList, id));
+    await setOpen(false);
     AllData();
   };
 
-  const handleOpen = (todo: TODO) => {
+  const handleOpen = async (todoId: string) => {
+    setId(todoId);
+    const newArray = filteredTodos.filter((todo) => todo.id === todoId);
+    setTitle(newArray[0].title);
+    setDetail(newArray[0].detail);
     setOpen(true);
-    setDetail(todo.detail);
   };
 
-  const handleClose = (todo: TODO) => {
-    const TodoListId = collection(
-      collection(db, "Users"),
-      user.uid,
-      "TodoListId"
-    );
+  const handleClose = async () => {
+    if (!uid) return;
+    const TodoList = collection(collection(db, "Users"), uid, "TodoListId");
+    updateDoc(doc(TodoList, id), { title: title, detail: detail });
     setOpen(false);
-    updateDoc(doc(TodoListId, todo.id), { detail: detail });
+    AllData();
   };
 
-  const handleChangeDetail = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleChangeTitle = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
+    setTitle(e.target.value);
+  };
+
+  const handleChangeDetail = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     setDetail(e.target.value);
   };
 
@@ -149,68 +170,89 @@ const Todos = () => {
               }}
             >
               {filteredTodos.map((todo) => (
-                <Modal
-                  open={open}
-                  onClose={handleClose}
-                  aria-labelledby="modal-modal-title"
-                  aria-describedby="modal-modal-description"
+                <Box
+                  sx={{
+                    display: "flex",
+                    bgcolor: "background.paper",
+                    borderRadius: 1,
+                  }}
                 >
-                  <Box>
-                    <Box
-                      sx={{
-                        display: "flex",
-                        bgcolor: "background.paper",
-                        borderRadius: 1,
+                  <li key={todo.id} className="list" style={{ width: "100%" }}>
+                    <select
+                      value={todo.status}
+                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                        statusChange(todo, e);
+                      }}
+                      style={{
+                        marginRight: "10px",
+                        border: "outset green",
+                        borderRadius: "8px",
                       }}
                     >
-                      <li key={todo.id} className="list">
-                        <select
-                          value={todo.status}
-                          onChange={(
-                            e: React.ChangeEvent<HTMLSelectElement>
-                          ) => {
-                            statusChange(todo, e);
-                          }}
-                          style={{
-                            marginRight: "10px",
-                            border: "outset green",
-                            borderRadius: "8px",
-                          }}
-                        >
-                          <option value="notStarted">未着手</option>
-                          <option value="doing">進行中</option>
-                          <option value="done">完了</option>
-                        </select>
-                        <span
-                          className="todo_title"
-                          style={{ fontSize: "20px" }}
-                        >
-                          {todo.title}
-                        </span>
-                        <Button onClick={() => handleOpen(todo)}>詳細</Button>
-                        <Button onClick={() => deleteTodo(todo)}>削除</Button>
-                      </li>
-                    </Box>
-                    <Box sx={{ margin: "300px", bgcolor: "white" }}>
-                      <Box sx={{ textAlign: "right" }}>
-                        <IconButton onClick={() => handleClose(todo)}>
-                          <p>保存して閉じる</p>
-                          <CloseIcon />
-                        </IconButton>
-                      </Box>
-                      <TextField
-                        id="outlined-multiline-static"
-                        label="詳細を記入"
-                        value={detail}
-                        multiline
-                        rows={4}
-                        fullWidth
-                        onChange={handleChangeDetail}
-                      />
-                    </Box>
-                  </Box>
-                </Modal>
+                      <option value="notStarted">未着手</option>
+                      <option value="doing">進行中</option>
+                      <option value="done">完了</option>
+                    </select>
+                    <span
+                      className="todo_title"
+                      style={{
+                        display: "inline-block",
+                        fontSize: "20px",
+                        width: "200px",
+                      }}
+                    >
+                      {todo.title}
+                    </span>
+                    <Button onClick={() => handleOpen(todo.id)}>詳細</Button>
+                  </li>
+                </Box>
               ))}
+              <Modal
+                open={open}
+                onClose={() => handleClose()} //onCloseではupDateDocが機能しない？
+                aria-labelledby="modal-modal-title"
+                aria-describedby="modal-modal-description"
+              >
+                <Box sx={style}>
+                  <Box sx={{ textAlign: "right" }}>
+                    <IconButton onClick={() => handleClose()}>
+                      <p style={{ fontSize: "20px" }}>保存して閉じる</p>
+                      <CloseIcon />
+                    </IconButton>
+                  </Box>
+                  <TextField
+                    id="outlined-static"
+                    label="タイトル"
+                    value={title}
+                    onChange={(e) => handleChangeTitle(e)}
+                    style={{
+                      width: "90%",
+                      flex: "2",
+                      marginLeft: "5%",
+                      marginBottom: "10px",
+                    }}
+                  />
+                  <TextField
+                    id="outlined-multiline-static"
+                    label="詳細を記入"
+                    value={detail}
+                    multiline
+                    rows={4}
+                    onChange={(e) => handleChangeDetail(e)}
+                    style={{
+                      width: "90%",
+                      flex: "2",
+                      marginLeft: "5%",
+                    }}
+                  />
+                  <Button
+                    sx={{ textAlign: "right" }}
+                    onClick={handleDeleteTodo}
+                  >
+                    削除
+                  </Button>
+                </Box>
+              </Modal>
               <AddTodos />
               <div
                 style={{
