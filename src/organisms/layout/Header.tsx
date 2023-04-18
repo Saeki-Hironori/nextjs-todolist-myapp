@@ -25,12 +25,12 @@ const Header = () => {
         router.push("/Login");
       })
       .catch((error) => {
-        // An error happened.
+        // エラー起きんな！
       });
   };
 
   return (
-    <Box sx={{ flexGrow: 1, bgcolor: "green" }}>
+    <Box sx={{ display: "flex", bgcolor: "green" }}>
       <AppBar position="static">
         <Toolbar sx={{ bgcolor: "green" }}>
           <IconButton
@@ -42,13 +42,14 @@ const Header = () => {
           >
             <MenuIcon />
           </IconButton>
-          <p>{user?.email}</p>
-          <p>（{user?.uid}）</p>
+          <p style={{ flex: "1" }}>{user?.email}</p>
+          <p style={{ flex: "1" }}>（{user?.uid}）</p>
+          <div style={{ flex: "5" }}></div>
           <Button
             variant="outlined"
             color="inherit"
             onClick={handleLogout}
-            sx={{ ml: 2 }}
+            sx={{ width: "30px" }}
           >
             Logout
           </Button>

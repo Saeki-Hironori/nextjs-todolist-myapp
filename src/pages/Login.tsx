@@ -31,7 +31,7 @@ const Login = () => {
     e.preventDefault();
     await signInWithEmailAndPassword(auth, email, password)
       .then(() => {
-        router.push("/todos/Todos");
+        router.push("/Todos");
       })
       .catch((error) => {
         console.log(error.code);
@@ -93,7 +93,7 @@ const Login = () => {
             ログイン
           </Button>
         </form>
-        <div>
+        <div style={{ textAlign: "right" }}>
           新規登録は
           <Link
             href="/"

@@ -100,7 +100,7 @@ const SignUp = () => {
           新規登録
         </Button>
       </form>
-      <div>
+      <div style={{ textAlign: "right" }}>
         すでに登録している人は
         <Link
           href="/Login"

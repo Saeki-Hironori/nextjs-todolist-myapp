@@ -1,4 +1,4 @@
-import React, { ChangeEvent, useState } from "react";
+import React, { useState } from "react";
 
 import IconButton from "@mui/material/IconButton";
 import FilledInput from "@mui/material/FilledInput";

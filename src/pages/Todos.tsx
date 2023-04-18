@@ -1,5 +1,5 @@
 import Header from "@/organisms/layout/Header";
-import React, { useEffect, useState } from "react";
+import React, { ChangeEvent, useEffect, useState } from "react";
 import AddTodos from "../components/atom/AddTodos";
 import {
   collection,
@@ -24,13 +24,15 @@ import CloseIcon from "@mui/icons-material/Close";
 import { TODO, TODOArray } from "@/types/user";
 
 const style = {
-  position: "absolute" as "absolute",
+  display: "flex",
+  flexFlow: "column",
+  position: "absolute",
   top: "50%",
   left: "50%",
   transform: "translate(-50%, -50%)",
   width: 400,
   bgcolor: "background.paper",
-  border: "2px solid #000",
+  border: "4px solid green",
   boxShadow: 24,
 };
 
@@ -52,8 +54,9 @@ const Todos = () => {
       setUser(currentUser);
     });
     AllData();
-  }, []);
+  }, [user]);
 
+  // onSnapshotを使ってみる
   useEffect(() => {
     filteringTodos();
   }, [filter, todos]);
@@ -67,17 +70,16 @@ const Todos = () => {
     );
     // createdBy順のデータを取得し配列にする
     await getDocs(createdBySort).then((res) => {
-      const AllTodos = res.docs.map((doc: any) => ({
-        //↑ここのanyが分からない
+      const AllTodos = res.docs.map((doc) => ({
         ...doc.data(),
       }));
-      setTodos(AllTodos);
+      setTodos(AllTodos as TODOArray);
     });
   };
 
   const statusChange = async (
     targetTodo: TODO,
-    e: React.ChangeEvent<HTMLSelectElement>
+    e: ChangeEvent<HTMLSelectElement>
   ) => {
     if (!uid) return;
     // TodoList = firestoreの各ユーザーのTodoListまでアクセス（User⇒uid⇒TodoList⇒todos）
@@ -108,7 +110,7 @@ const Todos = () => {
     if (!uid) return;
     const TodoList = collection(collection(db, "Users"), uid, "TodoListId");
     await deleteDoc(doc(TodoList, id));
-    await setOpen(false);
+    setOpen(false);
     AllData();
   };
 
@@ -121,21 +123,22 @@ const Todos = () => {
   };
 
   const handleClose = async () => {
+    console.log("動いた");
     if (!uid) return;
     const TodoList = collection(collection(db, "Users"), uid, "TodoListId");
-    updateDoc(doc(TodoList, id), { title: title, detail: detail });
+    await updateDoc(doc(TodoList, id), { title: title, detail: detail });
     setOpen(false);
     AllData();
   };
 
   const handleChangeTitle = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setTitle(e.target.value);
   };
 
   const handleChangeDetail = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+    e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
   ) => {
     setDetail(e.target.value);
   };
@@ -151,7 +154,7 @@ const Todos = () => {
               <label>Pick Up : </label>
               <select
                 value={filter}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                onChange={(e: ChangeEvent<HTMLSelectElement>) =>
                   setFilter(e.target.value)
                 }
               >
@@ -177,10 +180,14 @@ const Todos = () => {
                     borderRadius: 1,
                   }}
                 >
-                  <li key={todo.id} className="list" style={{ width: "100%" }}>
+                  <li
+                    key={todo.id}
+                    className="list"
+                    style={{ width: "100%", margin: "2px 0" }}
+                  >
                     <select
                       value={todo.status}
-                      onChange={(e: React.ChangeEvent<HTMLSelectElement>) => {
+                      onChange={(e: ChangeEvent<HTMLSelectElement>) => {
                         statusChange(todo, e);
                       }}
                       style={{
@@ -193,17 +200,24 @@ const Todos = () => {
                       <option value="doing">進行中</option>
                       <option value="done">完了</option>
                     </select>
-                    <span
+                    <p
                       className="todo_title"
                       style={{
                         display: "inline-block",
                         fontSize: "20px",
-                        width: "200px",
+                        width: "300px",
+                        minWidth: "200px",
                       }}
                     >
                       {todo.title}
-                    </span>
-                    <Button onClick={() => handleOpen(todo.id)}>詳細</Button>
+                    </p>
+                    <Button
+                      onClick={() => handleOpen(todo.id)}
+                      color="success"
+                      variant="outlined"
+                    >
+                      詳細
+                    </Button>
                   </li>
                 </Box>
               ))}
@@ -245,12 +259,14 @@ const Todos = () => {
                       marginLeft: "5%",
                     }}
                   />
-                  <Button
-                    sx={{ textAlign: "right" }}
-                    onClick={handleDeleteTodo}
-                  >
-                    削除
-                  </Button>
+                  <div style={{ textAlign: "right" }}>
+                    <Button
+                      sx={{ textAlign: "right" }}
+                      onClick={handleDeleteTodo}
+                    >
+                      削除
+                    </Button>
+                  </div>
                 </Box>
               </Modal>
               <AddTodos />
