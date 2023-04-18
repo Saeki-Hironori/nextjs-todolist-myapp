@@ -1,5 +1,5 @@
 import Header from "@/organisms/layout/Header";
-import React, { ChangeEvent, useEffect, useState } from "react";
+import React, { ChangeEvent, useCallback, useEffect, useState } from "react";
 import AddTodos from "../components/atom/AddTodos";
 import {
   collection,
@@ -54,14 +54,14 @@ const Todos = () => {
       setUser(currentUser);
     });
     AllData();
-  }, [user]);
+  }, [uid]);
 
   // onSnapshotを使ってみる
   useEffect(() => {
     filteringTodos();
   }, [filter, todos]);
 
-  const AllData = async () => {
+  const AllData = useCallback(async () => {
     if (!uid) return;
     //firestoreのデータをcreatedBy順にする
     const createdBySort = await query(
@@ -75,7 +75,7 @@ const Todos = () => {
       }));
       setTodos(AllTodos as TODOArray);
     });
-  };
+  }, [uid]);
 
   const statusChange = async (
     targetTodo: TODO,
@@ -90,7 +90,7 @@ const Todos = () => {
     AllData();
   };
 
-  const filteringTodos = () => {
+  const filteringTodos = useCallback(() => {
     switch (filter) {
       case "notStarted":
         setFilteredTodos(todos.filter((todo) => todo.status === "notStarted"));
@@ -104,7 +104,7 @@ const Todos = () => {
       default:
         setFilteredTodos(todos);
     }
-  };
+  }, [filter, todos]);
 
   const handleDeleteTodo = async () => {
     if (!uid) return;
